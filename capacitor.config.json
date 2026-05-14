@@ -1,0 +1,15 @@
+{
+  "appId": "com.nexusestate.app",
+  "appName": "Nexus Estate",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  },
+  "ios": {
+    "contentInset": "always"
+  },
+  "android": {
+    "allowMixedContent": false
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "name": "nexus-estate-site",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Nexus Estate dashboard — dark-mode SaaS UI for the n8n wholesaling backend. Vite + React + Tailwind v4.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview --port 4173"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "leaflet": "^1.9.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-leaflet": "^4.2.1",
+    "react-router-dom": "^6.26.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "tailwindcss": "^4.0.0",
+    "vite": "^5.4.11"
+  }
+}
