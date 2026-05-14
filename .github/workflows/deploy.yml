@@ -32,7 +32,10 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      - run: npm ci
+      # Using `npm install` (not `npm ci`) so the build works without a committed
+       # package-lock.json. If you ever run `npm install` locally and commit the
+       # lockfile, you can switch this back to `npm ci` for faster, deterministic builds.
+      - run: npm install
 
       - run: npm run build
 
