@@ -7,6 +7,7 @@ import ActivityFeed from '../components/ActivityFeed.jsx';
 import QuickActions from '../components/QuickActions.jsx';
 import NexusMap from '../components/NexusMap.jsx';
 import ChatBox from '../components/ChatBox.jsx';
+import RemindersCard from '../components/RemindersCard.jsx';
 
 const GRADE_COLOR = {
   A: 'text-ok', B: 'text-accent', C: 'text-warn', D: 'text-warn', F: 'text-danger',
@@ -90,17 +91,17 @@ export default function Dashboard() {
         <Card
           title="Nexus Assistant"
           className="lg:col-span-2"
-          action={<span className="text-xs text-muted">tell n8n what to do</span>}
+          action={<span className="text-xs text-muted">tell Nexus what to do</span>}
         >
           <ChatBox />
         </Card>
-        <Card title="Recent Activity" action={<span className="text-xs text-muted">event_log</span>}>
-          <ActivityFeed events={events} />
+        <Card title="Reminders" action={<span className="text-xs text-muted">open · soonest first</span>}>
+          <RemindersCard />
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 gap-6">
-        <Card title="Top Deals" action={<Link to="/app/deals" className="text-xs text-accent hover:underline">View all →</Link>}>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Card title="Top Deals" className="lg:col-span-2" action={<Link to="/app/deals" className="text-xs text-accent hover:underline">View all →</Link>}>
           {topDeals.length === 0 ? (
             <div className="text-sm text-muted">Run your first analysis to see top deals.</div>
           ) : (
@@ -127,6 +128,9 @@ export default function Dashboard() {
               ))}
             </ul>
           )}
+        </Card>
+        <Card title="Recent Activity" action={<span className="text-xs text-muted">event_log</span>}>
+          <ActivityFeed events={events} />
         </Card>
       </div>
     </div>

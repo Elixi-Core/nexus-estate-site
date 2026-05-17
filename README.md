@@ -304,11 +304,74 @@ src/
     GetListed, FindDeals (public intake)
 ```
 
-## 10. Nexus Assistant chat (n8n backend TODO)
+## 10. Nexus Assistant chat (n8n workflow ready to import)
 
-The Dashboard now has a **Nexus Assistant** chat box that POSTs to
-`/webhook/nexus/chat`. The n8n workflow that backs it does not exist yet —
-build one with this contract:
+The Dashboard has a **Nexus Assistant** chat box that POSTs to
+`/webhook/nexus/chat`. The backing n8n workflow is built and ready —
+file: `OneDrive/Elixira/workflows/nexus-chat-agent.json`.
+
+### What it can do
+
+12 tools wired to a Claude Sonnet 4.6 agent:
+
+- **Real estate ops:** `tool_analyze_deal`, `tool_intake_seller`,
+  `tool_intake_buyer`, `tool_draft_outreach`, `tool_generate_contract`
+  (POSTs to your existing 5 Nexus webhooks).
+- **Data queries:** `tool_search_sellers`, `tool_search_buyers`,
+  `tool_get_top_deals` (Supabase REST GET against your tables).
+- **Reminders:** `tool_create_reminder`, `tool_list_reminders`,
+  `tool_complete_reminder` (new `nexus_reminders` table — migration 0010).
+- **AOA bridge:** `tool_schedule_via_aoa` (POSTs to `/webhook/aoa/task-intake`,
+  routes to Outlook + MS To Do once AOA's OAuth is wired).
+
+### Import + wire steps
+
+1. **Apply migration 0010** (`supabase/migrations/0010_nexus_reminders.sql`)
+   in the Supabase SQL editor. Creates `nexus_reminders` + RLS policies +
+   `updated_at` trigger.
+
+2. **Create two n8n credentials** (if you don't already have them):
+   - `anthropicApi` type → "Anthropic account" → paste your key from
+     console.anthropic.com. The langchain Anthropic chat model needs THIS
+     credential type, NOT the httpHeaderAuth one you used for Elixira.
+   - `httpHeaderAuth` type → "Supabase service role" → header name
+     `apikey`, value = service-role key. Also add a second entry: header
+     `Authorization`, value = `Bearer <service-role-key>`.
+
+3. **Import the workflow**: n8n → Workflows → Import from File →
+   `workflows/nexus-chat-agent.json`. On import, n8n will flag every
+   credential reference (5 nodes use Supabase service role, 1 uses
+   Anthropic). Pick the credentials you just created in step 2.
+
+4. **Activate** the workflow (toggle top-right). The webhook lives at
+   `https://n8n.srv1609042.hstgr.cloud/webhook/nexus/chat`.
+
+5. **Test from the dashboard**: open the Nexus Assistant card on the
+   dashboard, type "list my hot sellers" or "remind me to call seller_abc
+   tomorrow at 3pm". Reply should land in <10 seconds.
+
+### Wire format (for reference)
+
+**Request:** `POST /webhook/nexus/chat` with `{ message, history }`.
+History is an array of `{ role: 'user'|'assistant', content }` from
+localStorage; the workflow flattens it into the agent's prompt.
+
+**Response:** `{ reply, actions }` — `reply` is plain text shown in the
+chat bubble; `actions` is an array of tool names invoked, shown as a
+"Actions taken:" footer.
+
+### About the AOA bridge
+
+The chat agent has a `tool_schedule_via_aoa` tool that POSTs to AOA's
+`/webhook/aoa/task-intake`. AOA accepts natural-language task descriptions
+and routes to Microsoft 365 (Outlook send, calendar events, MS To Do tasks).
+
+Until you finish AOA's OAuth setup (Microsoft Outlook + OneDrive + To Do
+credentials), the tool will return an error which the chat surfaces to you
+as plain text — the chat itself stays usable for everything else (reminders,
+data queries, deal analysis, contracts).
+
+### Old contract (for reference if you ever rebuild from scratch)
 
 **Request** (POST, JSON):
 ```json
