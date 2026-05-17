@@ -23,6 +23,7 @@ import DealNew from './pages/DealNew.jsx';
 import DealDetail from './pages/DealDetail.jsx';
 import Contracts from './pages/Contracts.jsx';
 import ContractNew from './pages/ContractNew.jsx';
+import ContractUpload from './pages/ContractUpload.jsx';
 import Settings from './pages/Settings.jsx';
 
 // Root: send signed-in users to the dashboard, everyone else to login.
@@ -66,6 +67,7 @@ export default function App() {
         <Route path="deals/:id" element={<DealDetail />} />
         <Route path="contracts" element={<Contracts />} />
         <Route path="contracts/new" element={<ContractNew />} />
+        <Route path="contracts/upload" element={<ContractUpload />} />
         <Route path="settings" element={<Settings />} />
       </Route>
 

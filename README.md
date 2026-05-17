@@ -277,10 +277,10 @@ These are deferred because they need backend pieces that don't exist yet:
 - Real `notifications` table + realtime channel (v1 uses `event_log` as the feed).
 - A `properties` table + per-user recommendation scoring (v1 shows top deals).
 - A `market_heat` heatmap data layer (v1 plots seller pins as a stand-in).
-- Nexus chat (would need a new n8n workflow + `messages` table).
 - Geocoding pipeline for seller addresses (add as a node to the seller-intake
   flow once you have a free geocoder picked).
-- The n8n side of the Stripe flow (see §5c — frontend is wired, backend is not).
+- The n8n side of the Stripe flow (see §5b — frontend is restored from git
+  history, backend is still not built).
 
 ## 9. Layout
 
@@ -288,17 +288,83 @@ These are deferred because they need backend pieces that don't exist yet:
 src/
   main.jsx, App.jsx, index.css
   lib/
-    supabase.js     supabase client (anon key)
-    nexus.js        5 webhook wrappers
+    supabase.js     supabase client (hardcoded anon key fallback)
+    nexus.js        6 webhook wrappers (5 nexus + 1 chat)
     auth.jsx        AuthProvider + useAuth hook
   components/
-    Layout, Sidebar, Topbar, RequireAuth
+    Layout, Sidebar, Topbar, RequireAuth, MobileNav
     Card, KPICard, DataTable, PageHeader
-    ActivityFeed, QuickActions, NexusMap
+    ActivityFeed, QuickActions, NexusMap, ChatBox
   pages/
-    Login, Dashboard, Settings
+    Login (6-digit passcode), Dashboard, Settings
     Sellers / SellerNew / SellerDetail
     Buyers  / BuyerNew
     Deals   / DealNew  / DealDetail
-    Contracts / ContractNew
+    Contracts / ContractNew / ContractUpload
+    GetListed, FindDeals (public intake)
 ```
+
+## 10. Nexus Assistant chat (n8n backend TODO)
+
+The Dashboard now has a **Nexus Assistant** chat box that POSTs to
+`/webhook/nexus/chat`. The n8n workflow that backs it does not exist yet —
+build one with this contract:
+
+**Request** (POST, JSON):
+```json
+{
+  "message": "send the hot sellers from this week a follow-up",
+  "history": [
+    { "role": "user", "content": "earlier user message" },
+    { "role": "assistant", "content": "earlier reply" }
+  ]
+}
+```
+
+**Response** (JSON):
+```json
+{
+  "reply": "Drafted 3 follow-ups, sent 2, queued 1 awaiting your review.",
+  "actions": [
+    "outreach drafted for seller_abc123",
+    "outreach sent to seller_def456"
+  ]
+}
+```
+
+Suggested n8n workflow shape:
+1. Webhook trigger at path `nexus/chat` (POST, CORS allowed for GH Pages origin).
+2. Claude (or OpenAI) message with `tool_use` enabled, system prompt = "You
+   are a real-estate wholesaling assistant. You have these tools…".
+3. Tool definitions for the 5 existing nexus webhooks (seller_intake,
+   buyer_intake, analyze_deal, outreach, contract) plus any new ones you
+   want (e.g. `search_sellers`, `send_email`, `get_comps`).
+4. Loop: if the model returns tool_use, run the tool, feed the result back,
+   repeat. When the model returns plain text, return `{ reply, actions }`.
+5. Log each turn to `event_log` with `event_type='chat_turn'`.
+
+Until this workflow exists, the chat UI shows a clear "couldn't reach
+Nexus" error on send. History persists in `localStorage` so testing the UI
+locally still works.
+
+## 11. Contract uploads (Storage + RLS)
+
+Contracts can now be uploaded directly from the dashboard (not just
+generated via n8n). This requires migration `0009_contract_uploads.sql`
+and one manual step in Supabase Storage:
+
+1. **Apply migration 0009** in the Supabase SQL editor. It adds
+   `storage_path`, `source`, `notes` columns to `contracts`, adds an
+   INSERT policy for approved users, and creates the `contracts` bucket
+   with read/upload policies for approved users.
+2. **Verify the bucket exists**: Supabase dashboard → Storage. You should
+   see a private bucket named `contracts`. If not, the SQL `insert into
+   storage.buckets` may have been blocked — create it manually via the UI
+   (name=`contracts`, public=off) and re-run the policy block.
+3. **Test end-to-end**: Dashboard → Contracts → Upload contract → pick a
+   PDF or DOCX (max 10 MB) → optional metadata → Upload.
+
+The frontend uploads via `supabase.storage.from('contracts').upload()` and
+then inserts a contracts row with `source='uploaded'` so generated and
+uploaded contracts can be distinguished on the Contracts list. Delete/
+update of storage objects stays service-role only.

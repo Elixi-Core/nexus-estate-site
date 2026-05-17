@@ -26,4 +26,8 @@ export const nexus = {
   analyzeDeal: (payload) => post('nexus/analyze-deal', payload),
   outreach: (sellerId) => post('nexus/outreach', { seller_id: sellerId }),
   contract: (payload) => post('nexus/contract', payload),
+  // Conversational agent. Expects { message, history: [{role, content}, ...] }.
+  // n8n must respond with { reply: string, actions?: string[] | object[] }.
+  // The backing workflow is NOT yet built — see README §6.
+  chat: (payload) => post('nexus/chat', payload),
 };

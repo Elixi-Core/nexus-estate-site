@@ -35,7 +35,13 @@ export default function Contracts() {
 
   return (
     <div>
-      <PageHeader title="Contracts" subtitle="Generated assignment contracts." actionLabel="+ Generate contract" actionTo="/app/contracts/new" />
+      <PageHeader
+        title="Contracts"
+        subtitle="Generated + uploaded contracts."
+        actionLabel="+ Generate contract"
+        actionTo="/app/contracts/new"
+        secondary={{ label: 'Upload contract', to: '/app/contracts/upload' }}
+      />
       {loading ? <div className="text-sm text-muted">Loading…</div> : (
         <DataTable rows={rows} columns={columns} empty="No contracts yet." />
       )}
